@@ -1,0 +1,18 @@
+{
+  "name": "api-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "implicitDependencies": ["api"],
+  "targets": {
+    "e2e": {
+      "outputs": [
+        "{workspaceRoot}/coverage/{e2eProjectRoot}",
+        "{workspaceRoot}/coverage/api-e2e"
+      ],
+      "dependsOn": ["api:build", "api:serve"],
+      "options": {
+        "passWithNoTests": true
+      }
+    }
+  }
+}
