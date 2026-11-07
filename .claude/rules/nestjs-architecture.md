@@ -25,8 +25,16 @@ modules/users/
 
 - Fayl nomlari kebab-case, `<feature>.<turi>.ts` shaklida. Klass nomlari PascalCase: `UsersService`, `CreateUserDto`.
 - Modul nomi ko'plikda bo'ladi (`users`, `tours`). Entity/type nomi birlikda (`User`).
-- Har bir feature modul `AppModule` ning `imports` ro'yxatiga qo'shiladi. Controller va provider'lar `AppModule` ga to'g'ridan-to'g'ri yozilmaydi. `src/app/` dagi `todos`/`health` bundan mustasno, ular shablondan qolgan.
+- Har bir feature modul `apps/api/src/router/index.ts` dagi `appRoutes` daraxtiga `{ path: '<feature>', module: <Feature>Module }` qilib qo'shiladi. U yerdan avtomatik import bo'ladi, `AppModule` ga qo'shilmaydi. Controller'da prefix yozilmaydi: `@Controller()`. Controller va provider'lar `AppModule` ga to'g'ridan-to'g'ri yozilmaydi. `src/app/` dagi `todos`/`health` bundan mustasno, ular shablondan qolgan.
 - Umumiy infratuzilma (Prisma, config, guard'lar, filter'lar) `apps/api/src/common/` yoki `apps/api/src/<infra>/` da turadi. `PrismaModule` `apps/api/src/prisma/` da joylashadi.
+
+## Base qatlam (`apps/api/src/common/`)
+
+- Standart CRUD uchun service `BaseService<TEntity, TCreate, TUpdate, TResponse, TId>` dan meros oladi: `entityName`, `sortableFields` va kerak bo'lsa `toResponse()` (maxfiy maydonlarni olib tashlash) beriladi. Ma'lumotga kirish `CrudRepository` orqali (Prisma delegate ustidan yoziladi).
+- Controller `createCrudController({ name, createDto, updateDto, responseDto, idType })` dan meros oladi va `constructor(protected readonly service: XService) { super(); }` yozadi. CRUD'ning faqat bir qismi kerak bo'lsa, oddiy controller yoziladi.
+- List endpoint query DTO'si `PaginationQueryDto` dan meros oladi, javob `PaginatedResponse<T>` (`@nestjs-template/types`).
+- Fayl qabul qiluvchi modul `UploadModule` ni import qiladi va route'da `@ApiFileUpload()` / `@ApiFilesUpload()` ishlatadi.
+- Job: queue nomi `jobs/queues.ts` dagi `QUEUES` ga, modulga `JobsModule.registerQueues(QUEUES.X)`, producer'da `@InjectQueue(QUEUES.X)`, worker `@JobProcessor(QUEUES.X)` + `extends BaseProcessor`.
 
 ## Qatlamlar
 
@@ -39,17 +47,19 @@ modules/users/
 ## DTO va type'lar
 
 - **Kiruvchi ma'lumot** (body/query) uchun modulning `dto/` papkasida `class-validator` dekoratorli **class** DTO yoziladi. Interface DTO runtime'da tekshirilmaydi, shablondagi `todos` bunga yomon namuna.
-- `Update*Dto` `@nestjs/mapped-types` dagi `PartialType(Create*Dto)` orqali yasaladi.
+- `Update*Dto` `@nestjs/swagger` dagi `PartialType(Create*Dto)` orqali yasaladi (swagger metadata'sini ham ko'chiradi).
+- Build swagger CLI plugin'ini ishlatmaydi, shuning uchun DTO va javob class'larining har bir maydoniga `@ApiProperty()` / `@ApiPropertyOptional()` yoziladi.
 - **Chiquvchi javob** shakllari (frontend ham ishlatadigan interface'lar) `packages/types/src/lib/` da saqlanadi va `@nestjs-template/types` dan `import type` bilan olinadi.
 - `packages/types` da faqat sof TypeScript bo'ladi. U yerda NestJS, class-validator yoki `@prisma/client` importlari bo'lmaydi.
 - Prisma model obyektini to'g'ridan-to'g'ri qaytarmang, ayniqsa `password`/`passwordHash` kabi maydonlar bo'lsa. Service umumiy type'ga map qilib qaytaradi.
-- `class-validator` / `ValidationPipe` hali o'rnatilmagan. Birinchi DTO yozilayotganda foydalanuvchiga aytib, ularni qo'shish taklif qilinadi: `main.ts` da `app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))`.
+- `class-validator` / `class-transformer` o'rnatilgan, global `ValidationPipe` `main.ts` da `common/pipes/validation.ts` dagi umumiy sozlamalar bilan ulangan.
 
 ## Xatolar va HTTP
 
 - Topilmadi holatida `NotFoundException`, noto'g'ri so'rovda `BadRequestException`, takrorlanuvchi qiymatda `ConflictException`, ruxsat yo'qligida `ForbiddenException`/`UnauthorizedException` tashlanadi. Xabar inglizcha va aniq bo'ladi: `User #12 not found`.
 - Service xato holatda `null` qaytarmaydi, exception tashlaydi.
-- Prisma xatolarini (`P2002` unique, `P2025` not found) service'da tegishli Nest exception'ga aylantiring. Ular 500 bo'lib chiqib ketmasligi kerak.
+- Prisma xatolarini (`P2002` unique, `P2025` not found, `P2003` FK) service'da tegishli Nest exception'ga aylantiring. `BaseService.mapError()` buni qiladi; o'z metodlaringizda ham undan foydalaning. Ular 500 bo'lib chiqib ketmasligi kerak.
+- Barcha xato javoblari `AllExceptionsFilter` orqali `ApiErrorResponse` shaklida qaytadi.
 - Route param'lari pipe bilan tekshiriladi: `ParseIntPipe` yoki `ParseUUIDPipe`.
 - `DELETE` uchun `@HttpCode(204)` ishlatiladi. `POST` default bo'yicha 201 qaytaradi.
 

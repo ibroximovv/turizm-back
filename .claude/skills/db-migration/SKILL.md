@@ -65,6 +65,7 @@ Boshlashdan oldin foydalanuvchiga reja aytilib, `npm install` uchun rozilik olin
 3. `DATABASE_URL`:
    - `.env` ga lokal qiymat yoziladi. `.env` `.gitignore` da ekanini tekshiring, bo'lmasa qo'shing.
    - `.env.example` ga namuna yoziladi: `postgresql://postgres:postgres@localhost:5432/turizm?schema=public`.
+   - `apps/api/src/config/envs.ts` ga `DATABASE_URL` majburiy qiymat sifatida qo'shiladi (`env.string('DATABASE_URL')`). Ilova kodi uni faqat `envs` dan oladi.
    - Haqiqiy parollar yozilmaydi va commit qilinmaydi.
 4. `apps/api/src/prisma/prisma.service.ts` yaratiladi: `PrismaClient` dan meros oladi va `OnModuleInit` da `$connect()` qiladi. Shu papkada `prisma.module.ts` ham yaratiladi: `@Global()`, `PrismaService` ni provide va export qiladi. U `AppModule.imports` ga qo'shiladi.
 5. Build tekshiriladi: `tsdown` `@prisma/client` ni external qoldirishi kerak. `apps/api/package.json` dependencies'ga `@prisma/client` qo'shiladi, aks holda prune qilingan Docker image'da u bo'lmaydi.

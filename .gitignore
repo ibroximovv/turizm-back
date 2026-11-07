@@ -45,3 +45,6 @@ Thumbs.db
 .claude/settings.local.json
 
 .nx/polygraph
+# local env and uploaded files
+.env
+uploads

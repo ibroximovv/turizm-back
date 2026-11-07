@@ -13,7 +13,14 @@ Turizm platformasi uchun backend API. Nx monorepo + NestJS 11, TypeScript, Postg
 ```
 apps/
   api/                    NestJS ilova (tags: scope:api, type:app)
-    src/main.ts           bootstrap, global prefix "api", PORT (default 3000)
+    src/main.ts           bootstrap: logger, global prefix, ValidationPipe, CORS, swagger
+    src/config/envs.ts    BARCHA env o'zgaruvchilar shu yerda o'qiladi va tekshiriladi (`process.env` boshqa joyda ishlatilmaydi)
+    src/router/index.ts   BARCHA feature route'lar shu yerda (RouterModule): /api/v1/<path>
+    src/common/           base qatlam: BaseService, createCrudController, PaginationQueryDto,
+                          AllExceptionsFilter, AppLogger (LOG_* env), RequestLoggerMiddleware
+    src/swagger/          setupSwagger (SWAGGER_* env), default /api/docs
+    src/upload/           UploadModule + ApiFileUpload/ApiFilesUpload (multer, UPLOAD_* env)
+    src/jobs/             JobsModule (BullMQ + Redis), QUEUES, BaseProcessor, @JobProcessor
     src/app/              app.module.ts (root) + shablondan qolgan namuna (todos, health)
     src/modules/<feature> domen modullari shu yerda yaratiladi (qarang: .claude/rules/nestjs-architecture.md)
     tsdown.config.mts     build (oxc/rolldown) -> dist/apps/api/main.cjs
@@ -36,6 +43,12 @@ packages/
 | `todos` | namuna | shablondan qolgan, domen emas, keyin o'chiriladi |
 
 Yangi modul qo'shilganda shu jadval yangilanadi.
+
+### Konfiguratsiya va loglar
+
+- Yangi env o'zgaruvchi: `apps/api/src/config/envs.ts` dagi `Envs` interface va `parseEnvs` ga qo'shiladi, `.env.example` ga namunasi yoziladi. `.env` eng yaqin papkadan (cwd'dan yuqoriga qarab) yoki `ENV_FILE` dan yuklanadi.
+- Log darajasi `LOG_LEVEL` (fatal | error | warn | log | debug | verbose), format `LOG_FORMAT` (pretty | json). Kodda `new Logger(MyService.name)` ishlatiladi, `console.log` emas.
+- Background job'lar uchun Redis kerak (`REDIS_*`). Queue ro'yxatdan o'tkazilmaguncha Redis'ga ulanilmaydi, shuning uchun hozir API Redis'siz ham ishga tushadi.
 
 ### Ma'lumotlar bazasi
 

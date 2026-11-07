@@ -1,6 +1,6 @@
 ---
 name: new-module
-description: Turizm API uchun yangi NestJS domen modulini yaratadi (module, controller, service, DTO, umumiy type'lar, unit testlar) va AppModule'ga ulaydi. Foydalanuvchi yangi modul/resurs/domen (masalan users, auth, tours) qo'shishni so'raganda ishlating.
+description: Turizm API uchun yangi NestJS domen modulini yaratadi (module, controller, service, DTO, umumiy type'lar, unit testlar) va `src/router/index.ts` ga ulaydi. Foydalanuvchi yangi modul/resurs/domen (masalan users, auth, tours) qo'shishni so'raganda ishlating.
 argument-hint: <feature-nomi ko'plikda, masalan users>
 ---
 
@@ -19,7 +19,7 @@ Agar quyidagilar so'rovdan aniq bo'lmasa, kod yozishdan oldin foydalanuvchidan *
 ## 2. Mavjud holatni tekshirish
 
 - `apps/api/src/modules/` da shu nomli modul yo'qligini tekshiring.
-- `class-validator`, `class-transformer`, `@nestjs/mapped-types` o'rnatilganmi, `package.json` dan qarang. O'rnatilmagan bo'lsa, foydalanuvchiga aytib, `npm install` uchun rozilik so'rang. `main.ts` ga global `ValidationPipe` qo'shishni ham taklif qiling.
+- Base qatlamni ko'rib chiqing: `apps/api/src/common/` (BaseService, createCrudController, PaginationQueryDto). To'liq CRUD bo'lsa, shulardan meros oling.
 
 ## 3. Scaffold
 
@@ -48,7 +48,7 @@ Generator yaratgan keraksiz fayllarni (`entities/*.entity.ts` va boshqa bo'sh na
 - **Service:** biznes logika shu yerda. Topilmasa `NotFoundException` tashlanadi. DB kerak bo'lsa `PrismaService` inject qilinadi.
 - **Controller:** yupqa bo'ladi. Param'lar pipe bilan tekshiriladi, `DELETE` uchun `@HttpCode(204)` qo'yiladi.
 - **Module:** boshqa modullarga kerak bo'lsa service `exports` ga qo'shiladi.
-- `apps/api/src/app/app.module.ts` dagi `imports` ga `<Feature>Module` qo'shiladi.
+- `apps/api/src/router/index.ts` dagi `appRoutes` ning `v1` bolalariga `{ path: '<feature>', module: <Feature>Module }` qo'shiladi. `AppModule` ga qo'shilmaydi.
 
 ## 5. Testlar
 
@@ -63,4 +63,4 @@ Modulga Prisma modeli kerak bo'lsa, `db-migration` skill'i bo'yicha model qo'shi
 
 - `verify` skill'ini ishlating. Kamida typecheck va `npx nx run api:test -- <feature>` o'tishi shart.
 - `CLAUDE.md` dagi "Domen modullari" jadvalida modul holatini yangilang.
-- Foydalanuvchiga o'zbekcha qisqa hisobot bering: yaratilgan fayllar, endpoint'lar ro'yxati (`METHOD /api/<feature>/...`), test natijasi va hali qilinmagan ishlar.
+- Foydalanuvchiga o'zbekcha qisqa hisobot bering: yaratilgan fayllar, endpoint'lar ro'yxati (`METHOD /api/v1/<feature>/...`), test natijasi va hali qilinmagan ishlar.
