@@ -48,3 +48,6 @@ Thumbs.db
 # local env and uploaded files
 .env
 uploads
+
+# generated Prisma client (npx prisma generate)
+apps/api/src/generated

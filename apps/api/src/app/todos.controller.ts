@@ -16,7 +16,10 @@ import type {
   UpdateTodoDto,
 } from '@nestjs-template/types';
 import { TodosService } from './todos.service';
+import { Public } from '../modules/auth/decorators/public.decorator';
 
+// Template endpoint: stays open after the global JwtAuthGuard.
+@Public()
 @Controller('todos')
 export class TodosController {
   constructor(private readonly todosService: TodosService) {}

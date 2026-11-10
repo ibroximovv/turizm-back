@@ -10,6 +10,10 @@ RUN npm ci --ignore-scripts
 # Copy source
 COPY . .
 
+# npm ci ran with --ignore-scripts, so the postinstall `prisma generate` must run explicitly.
+# The generated client (apps/api/src/generated) is bundled into main.cjs by tsdown.
+RUN npx prisma generate --config apps/api/prisma.config.ts
+
 # Build the api app with the oxc toolchain (tsdown) and prune the lockfile.
 # The prune target depends on build, so this produces main.cjs plus a pruned
 # package.json + package-lock.json + workspace_modules in the output directory.

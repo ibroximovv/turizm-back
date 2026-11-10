@@ -8,12 +8,17 @@
     "@nestjs/bullmq": "^11.0.5",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/jwt": "11.0.2",
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/swagger": "^11.4.8",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "argon2": "0.45.2",
     "bullmq": "^6.7.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "multer": "^2.4.0",
+    "pg": "8.23.1",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0"
   }

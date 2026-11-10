@@ -1,5 +1,7 @@
 import { Module, type Type } from '@nestjs/common';
 import { RouterModule, type RouteTree, type Routes } from '@nestjs/core';
+import { AuthModule } from '../modules/auth/auth.module';
+import { UsersModule } from '../modules/users/users.module';
 
 /**
  * Every feature route of the API is declared here, and only here.
@@ -21,7 +23,8 @@ export const appRoutes: Routes = [
   {
     path: 'v1',
     children: [
-      // { path: 'users', module: UsersModule },
+      { path: 'auth', module: AuthModule },
+      { path: 'users', module: UsersModule },
     ],
   },
 ];

@@ -1,6 +1,6 @@
 # turizm-back
 
-Turizm platformasi uchun backend API. Nx monorepo + NestJS 11, TypeScript, PostgreSQL + Prisma (rejalashtirilgan).
+Turizm platformasi uchun backend API. Nx monorepo + NestJS 11, TypeScript, PostgreSQL + Prisma 7.
 
 ## Til va muloqot
 
@@ -21,6 +21,10 @@ apps/
     src/swagger/          setupSwagger (SWAGGER_* env), default /api/docs
     src/upload/           UploadModule + ApiFileUpload/ApiFilesUpload (multer, UPLOAD_* env)
     src/jobs/             JobsModule (BullMQ + Redis), QUEUES, BaseProcessor, @JobProcessor
+    src/prisma/           PrismaModule (@Global) + PrismaService (pg driver adapter)
+    src/generated/prisma  `prisma generate` natijasi (gitignore'da, qo'lda tahrirlanmaydi)
+    prisma/schema.prisma  Prisma schema, prisma/migrations/ migratsiyalar
+    prisma.config.ts      Prisma CLI config (.env ni o'zi yuklaydi)
     src/app/              app.module.ts (root) + shablondan qolgan namuna (todos, health)
     src/modules/<feature> domen modullari shu yerda yaratiladi (qarang: .claude/rules/nestjs-architecture.md)
     tsdown.config.mts     build (oxc/rolldown) -> dist/apps/api/main.cjs
@@ -38,8 +42,8 @@ packages/
 
 | Modul | Holat | Izoh |
 | ----- | ----- | ---- |
-| `auth` | rejada | JWT asosida |
-| `users` | rejada | foydalanuvchilar, profil |
+| `auth` | tayyor | phone + password, JWT access + refresh (rotation). Global `JwtAuthGuard`, ochiq route'lar `@Public()` bilan belgilanadi. SMS tasdiqlash hali yo'q |
+| `users` | tayyor (minimal) | `User` modeli, `GET /users/me`. Admin CRUD hali yo'q |
 | `todos` | namuna | shablondan qolgan, domen emas, keyin o'chiriladi |
 
 Yangi modul qo'shilganda shu jadval yangilanadi.
@@ -52,7 +56,13 @@ Yangi modul qo'shilganda shu jadval yangilanadi.
 
 ### Ma'lumotlar bazasi
 
-PostgreSQL + Prisma tanlangan, lekin hali o'rnatilmagan. Bazaga oid har qanday ish uchun `db-migration` skill'idan foydalaning. Unda dastlabki sozlash qadamlari ham bor.
+PostgreSQL + Prisma 7 (`prisma-client` generator, `@prisma/adapter-pg`). Bazaga oid har qanday ish uchun `db-migration` skill'idan foydalaning.
+
+- Schema: `apps/api/prisma/schema.prisma`, config: `apps/api/prisma.config.ts`. Prisma buyruqlari `apps/api` papkasidan ishga tushiriladi (`cd apps/api && npx prisma ...`) yoki ildizdan `--config apps/api/prisma.config.ts` bilan.
+- Client `npm install` dagi `postinstall` da generate bo'ladi. Schema o'zgarsa: `npx prisma generate`. Import: `../generated/prisma/client` (yoki `src/prisma` barrel).
+- `DATABASE_URL` majburiy (`envs.ts`). Lokal baza: PostgreSQL `localhost:5432`, `development` bazasi.
+- Lokal DB user'da `CREATEDB` huquqi yo'q, shuning uchun `migrate dev` shadow DB yarata olmaydi (P3014). Yechim: user'ga `CREATEDB` berish yoki bo'sh baza yaratib `SHADOW_DATABASE_URL` ga yozish. `init` migratsiyasi `migrate diff --from-empty` + `migrate deploy` bilan yaratilgan.
+- Dockerfile builder bosqichida `prisma generate` ishlaydi. Production'da `prisma migrate deploy` qanday ishga tushirilishi hali kelishilmagan.
 
 ## Buyruqlar
 

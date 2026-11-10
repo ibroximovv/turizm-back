@@ -62,7 +62,21 @@ export interface Envs {
   JOBS_CONCURRENCY: number;
   JOBS_ATTEMPTS: number;
   JOBS_BACKOFF_MS: number;
+
+  // Database (PostgreSQL + Prisma)
+  DATABASE_URL: string;
+
+  // Auth (JWT)
+  JWT_ACCESS_SECRET: string;
+  JWT_REFRESH_SECRET: string;
+  /** Lifetime in seconds. */
+  JWT_ACCESS_EXPIRES_IN: number;
+  /** Lifetime in seconds. */
+  JWT_REFRESH_EXPIRES_IN: number;
 }
+
+const DURATION_UNITS: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86400 };
+const MIN_SECRET_LENGTH = 32;
 
 type Source = Record<string, string | undefined>;
 
@@ -121,6 +135,27 @@ class EnvReader {
     return fallback;
   }
 
+  /** Seconds, given as a plain number (`900`) or with a unit: `30s`, `15m`, `12h`, `7d`. */
+  duration(key: string, fallbackSeconds: number): number {
+    const value = this.raw(key);
+    if (value === undefined) return fallbackSeconds;
+    const match = /^(\d+)\s*([smhd]?)$/i.exec(value);
+    const seconds = match ? Number(match[1]) * (DURATION_UNITS[match[2].toLowerCase()] ?? 1) : 0;
+    if (seconds <= 0) {
+      this.errors.push(`${key} must be a positive duration like 900, 15m, 12h or 7d, got "${value}"`);
+      return fallbackSeconds;
+    }
+    return seconds;
+  }
+
+  secret(key: string, fallback?: string): string {
+    const value = this.string(key, fallback);
+    if (value !== '' && value.length < MIN_SECRET_LENGTH) {
+      this.errors.push(`${key} must be at least ${MIN_SECRET_LENGTH} characters long`);
+    }
+    return value;
+  }
+
   list(key: string, fallback: string[]): string[] {
     const value = this.raw(key);
     if (value === undefined) return fallback;
@@ -136,6 +171,8 @@ export function parseEnvs(source: Source): Envs {
   const env = new EnvReader(source);
   const NODE_ENV = env.oneOf('NODE_ENV', NODE_ENVS, 'development');
   const isProduction = NODE_ENV === 'production';
+  // Unit tests never talk to a real database or sign real tokens, so they get placeholders.
+  const testOnly = (value: string): string | undefined => (NODE_ENV === 'test' ? value : undefined);
 
   const envs: Envs = {
     NODE_ENV,
@@ -177,7 +214,18 @@ export function parseEnvs(source: Source): Envs {
     JOBS_CONCURRENCY: env.int('JOBS_CONCURRENCY', 5, { min: 1, max: 100 }),
     JOBS_ATTEMPTS: env.int('JOBS_ATTEMPTS', 3, { min: 1, max: 50 }),
     JOBS_BACKOFF_MS: env.int('JOBS_BACKOFF_MS', 5000, { min: 0 }),
+
+    DATABASE_URL: env.string('DATABASE_URL', testOnly('postgresql://test:test@localhost:5432/test')),
+
+    JWT_ACCESS_SECRET: env.secret('JWT_ACCESS_SECRET', testOnly('test-access-secret-0123456789abcdef')),
+    JWT_REFRESH_SECRET: env.secret('JWT_REFRESH_SECRET', testOnly('test-refresh-secret-0123456789abcdef')),
+    JWT_ACCESS_EXPIRES_IN: env.duration('JWT_ACCESS_EXPIRES_IN', 15 * 60),
+    JWT_REFRESH_EXPIRES_IN: env.duration('JWT_REFRESH_EXPIRES_IN', 30 * 86400),
   };
+
+  if (envs.JWT_ACCESS_SECRET !== '' && envs.JWT_ACCESS_SECRET === envs.JWT_REFRESH_SECRET) {
+    env.errors.push('JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be different');
+  }
 
   if (env.errors.length > 0) {
     throw new Error(`Invalid environment configuration:\n  - ${env.errors.join('\n  - ')}`);
